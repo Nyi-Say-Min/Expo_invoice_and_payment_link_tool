@@ -1,0 +1,23 @@
+CREATE TABLE "orders" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"customer_name" text NOT NULL,
+	"customer_contact" text NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"items" jsonb NOT NULL,
+	"expo_discount_enabled" boolean NOT NULL,
+	"subtotal_usd_cents" integer NOT NULL,
+	"subtotal_cny" integer NOT NULL,
+	"discount_kind" text NOT NULL,
+	"discount_usd_cents" integer NOT NULL,
+	"discount_cny" integer NOT NULL,
+	"total_usd_cents" integer NOT NULL,
+	"total_cny" integer NOT NULL,
+	"total_weight_g" integer NOT NULL,
+	"stripe_payment_link_id" text,
+	"stripe_payment_url" text,
+	"stripe_checkout_session_id" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "orders_stripe_payment_link_id_unique" UNIQUE("stripe_payment_link_id"),
+	CONSTRAINT "orders_stripe_checkout_session_id_unique" UNIQUE("stripe_checkout_session_id")
+);
