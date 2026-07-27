@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.local
+
+# drizzle
+drizzle/meta/
+
+# OS
+.DS_Store
