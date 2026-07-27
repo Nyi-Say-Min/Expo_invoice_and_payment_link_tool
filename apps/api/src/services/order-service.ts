@@ -13,7 +13,7 @@ import { pricingFromInput } from './pricing-service.js'
 export type CreateOrderInput = Record<string, unknown>
 export type OrderStore = Pick<
   OrderRepository,
-  'list' | 'findById' | 'create' | 'savePaymentLink' | 'markPaid'
+  'list' | 'count' | 'findById' | 'create' | 'savePaymentLink' | 'markPaid'
 >
 export type PaymentGateway = Pick<
   StripePaymentGateway,
@@ -44,8 +44,22 @@ export class OrderService {
     return pricingFromInput(input)
   }
 
-  list(limit = 100) {
-    return this.repository.list(limit)
+  async list(page = 1, pageSize = 20) {
+    const safePage = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1
+    const safePageSize = Number.isFinite(pageSize)
+      ? Math.min(20, Math.max(1, Math.floor(pageSize)))
+      : 20
+    const [orders, total] = await Promise.all([
+      this.repository.list(safePageSize, (safePage - 1) * safePageSize),
+      this.repository.count(),
+    ])
+    return {
+      orders,
+      page: safePage,
+      pageSize: safePageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / safePageSize)),
+    }
   }
 
   listAll() {

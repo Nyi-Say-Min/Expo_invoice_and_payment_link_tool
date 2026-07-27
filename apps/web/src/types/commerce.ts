@@ -16,7 +16,22 @@ export type CartItem = {
   blonde: boolean
 }
 
+export type PricedItem = CartItem & {
+  description: string
+  unitUsdCents: number
+  unitCny: number
+  lineUsdCents: number
+  lineCny: number
+  weightG: number
+}
+
+export type PricingItem = PricedItem & {
+  unitUsd: number
+  lineUsd: number
+}
+
 export type Pricing = {
+  items: PricingItem[]
   subtotalUsd: number
   subtotalCny: number
   discountKind: 'none' | 'expo' | 'volume'
@@ -44,7 +59,7 @@ export type Order = {
   customerName: string
   customerContact: string
   status: 'pending' | 'paid'
-  items: CartItem[]
+  items: PricedItem[]
   expoDiscountEnabled: boolean
   subtotalUsd: number
   subtotalCny: number
@@ -66,4 +81,11 @@ export type PaymentLinkResult = {
 export type ApiEnvelope<T> = {
   data: T
   filters?: Filters
+}
+
+export type Pagination = {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
 }

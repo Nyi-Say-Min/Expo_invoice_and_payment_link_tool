@@ -11,12 +11,14 @@ import type {
 } from '../../../types/commerce'
 
 type PaymentError = '' | 'validation' | 'payment' | 'status'
+type PaymentSource = '' | 'new-order' | 'history'
 
 export function usePaymentLink() {
   const [savedOrder, setSavedOrder] = useState<Order | null>(null)
   const [result, setResult] = useState<PaymentLinkResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<PaymentError>('')
+  const [source, setSource] = useState<PaymentSource>('')
   const inFlight = useRef(false)
 
   async function submit(draft: Draft) {
@@ -28,6 +30,7 @@ export function usePaymentLink() {
     }
 
     inFlight.current = true
+    setSource('new-order')
     setLoading(true)
     setError('')
     try {
@@ -42,6 +45,31 @@ export function usePaymentLink() {
       inFlight.current = false
       setLoading(false)
     }
+  }
+
+  async function resume(
+    orderId: string,
+    paymentSource: PaymentSource = 'history',
+  ) {
+    if (inFlight.current) return
+    inFlight.current = true
+    setSource(paymentSource)
+    setLoading(true)
+    setError('')
+    try {
+      const payment = await createPaymentLink(orderId)
+      setSavedOrder(payment.order)
+      setResult(payment)
+    } catch {
+      setError('payment')
+    } finally {
+      inFlight.current = false
+      setLoading(false)
+    }
+  }
+
+  function retry() {
+    if (savedOrder) void resume(savedOrder.id, source || 'new-order')
   }
 
   async function refresh() {
@@ -66,6 +94,7 @@ export function usePaymentLink() {
     setSavedOrder(null)
     setResult(null)
     setError('')
+    setSource('')
   }
 
   return {
@@ -73,7 +102,10 @@ export function usePaymentLink() {
     result,
     loading,
     error,
+    source,
     submit,
+    resume,
+    retry,
     refresh,
     reset,
   }

@@ -1,13 +1,18 @@
-import { desc, eq } from 'drizzle-orm'
+import { count, desc, eq } from 'drizzle-orm'
 import { db } from '../db/client.js'
 import { orders, type Order } from '../db/schema.js'
 
 type NewOrder = typeof orders.$inferInsert
 
 export class OrderRepository {
-  async list(limit?: number) {
+  async list(limit?: number, offset = 0) {
     const query = db.select().from(orders).orderBy(desc(orders.createdAt))
-    return limit ? query.limit(limit) : query
+    return limit ? query.limit(limit).offset(offset) : query
+  }
+
+  async count() {
+    const [result] = await db.select({ value: count() }).from(orders)
+    return result.value
   }
 
   async findById(id: string) {

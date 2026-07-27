@@ -56,6 +56,9 @@ export function OrderPanel({
         <div className="cart-list">
           {draft.items.map((item, index) => {
             const product = products.find((entry) => entry.sku === item.sku)
+            const pricedItem = pricing?.items.find(
+              (entry) => entry.sku === item.sku && entry.blonde === item.blonde,
+            )
             if (!product) return null
             return (
               <div className="cart-item" key={`${item.sku}-${item.blonde}`}>
@@ -66,6 +69,12 @@ export function OrderPanel({
                   <span>
                     {product.line} · {item.blonde ? 'Blonde +30%' : 'Standard shade'}
                   </span>
+                </div>
+                <div className="cart-line-total">
+                  <strong>{pricedItem ? money(pricedItem.lineUsd) : '—'}</strong>
+                  <small>
+                    {pricedItem ? `¥${pricedItem.lineCny.toLocaleString()}` : '—'}
+                  </small>
                 </div>
                 <input
                   aria-label={`Quantity for ${product.sku}`}

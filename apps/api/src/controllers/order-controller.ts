@@ -6,9 +6,19 @@ import { orderResponse, pricingResponse } from './response-mappers.js'
 export class OrderController {
   constructor(private service: OrderService = orderService) {}
 
-  list = async (_request: Request, response: Response) => {
-    const orders = await this.service.list()
-    response.json({ data: orders.map(orderResponse) })
+  list = async (request: Request, response: Response) => {
+    const page = Number(request.query.page ?? 1)
+    const pageSize = Number(request.query.limit ?? 20)
+    const result = await this.service.list(page, pageSize)
+    response.json({
+      data: result.orders.map(orderResponse),
+      pagination: {
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    })
   }
 
   preview = (request: Request, response: Response) => {

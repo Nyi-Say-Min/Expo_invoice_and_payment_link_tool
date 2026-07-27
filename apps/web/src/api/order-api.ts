@@ -4,6 +4,7 @@ import type {
   CartItem,
   Draft,
   Order,
+  Pagination,
   PaymentLinkResult,
   Pricing,
 } from '../types/commerce'
@@ -39,4 +40,23 @@ export async function refreshOrderStatus(orderId: string) {
     `/api/orders/${orderId}/refresh-status`,
   )
   return response.data.data
+}
+
+export async function getOrders(page: number) {
+  const response = await httpClient.get<ApiEnvelope<Order[]> & {
+    pagination: Pagination
+  }>('/api/orders', {
+    params: { page, limit: 10 },
+  })
+  return {
+    orders: response.data.data,
+    pagination: response.data.pagination,
+  }
+}
+
+export async function getOrdersCsv() {
+  const response = await httpClient.get<Blob>('/api/orders/export.csv', {
+    responseType: 'blob',
+  })
+  return response.data
 }

@@ -31,6 +31,7 @@ const pendingOrder: Order = {
 function dependencies(order = pendingOrder) {
   const repository: OrderStore = {
     list: vi.fn(async () => [order]),
+    count: vi.fn(async () => 1),
     findById: vi.fn(async () => order),
     create: vi.fn(async (input) => ({ ...order, ...input })),
     savePaymentLink: vi.fn(async (_id, link) => ({
@@ -59,6 +60,19 @@ function dependencies(order = pendingOrder) {
 }
 
 describe('OrderService', () => {
+  it('caps order history pages at 20 rows', async () => {
+    const { repository, payments } = dependencies()
+    const result = await new OrderService(repository, payments).list(2, 50)
+
+    expect(repository.list).toHaveBeenCalledWith(20, 20)
+    expect(result).toMatchObject({
+      page: 2,
+      pageSize: 20,
+      total: 1,
+      totalPages: 1,
+    })
+  })
+
   it('recalculates prices server-side when creating an order', async () => {
     const { repository, payments } = dependencies()
     const service = new OrderService(repository, payments)

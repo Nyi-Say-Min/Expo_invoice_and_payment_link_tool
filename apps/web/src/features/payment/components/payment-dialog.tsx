@@ -11,6 +11,7 @@ type Props = {
   onRetry: () => void
   onRefresh: () => void
   onNext: () => void
+  nextLabel?: string
 }
 
 export function PaymentDialog({
@@ -20,6 +21,7 @@ export function PaymentDialog({
   onRetry,
   onRefresh,
   onNext,
+  nextLabel = 'Start next order',
 }: Props) {
   const linkedOrder = result?.order ?? order
 
@@ -76,7 +78,7 @@ export function PaymentDialog({
               <button className="quiet bordered" disabled={loading} onClick={onRefresh}>
                 {loading ? 'Checking…' : 'Refresh status'}
               </button>
-              <button className="primary" onClick={onNext}>Start next order</button>
+              <button className="primary" onClick={onNext}>{nextLabel}</button>
             </div>
           </>
         )}
