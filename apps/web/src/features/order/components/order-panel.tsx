@@ -9,6 +9,10 @@ type Props = {
   onUpdateDetails: (changes: Partial<Draft>) => void
   onRemoveItem: (index: number) => void
   onClear: () => void
+  onSubmit: () => void
+  submitting: boolean
+  submitError: string
+  online: boolean
 }
 
 export function OrderPanel({
@@ -19,7 +23,19 @@ export function OrderPanel({
   onUpdateDetails,
   onRemoveItem,
   onClear,
+  onSubmit,
+  submitting,
+  submitError,
+  online,
 }: Props) {
+  const ready = Boolean(
+    pricing &&
+    draft.items.length &&
+    draft.customerName.trim() &&
+    draft.customerContact.trim() &&
+    online,
+  )
+
   return (
     <aside className="order-panel">
       <div className="section-heading">
@@ -72,6 +88,7 @@ export function OrderPanel({
         <h3>Customer</h3>
         <div className="field-row">
           <input
+            aria-label="Customer name"
             placeholder="Name"
             value={draft.customerName}
             onChange={(event) => onUpdateDetails({
@@ -79,6 +96,7 @@ export function OrderPanel({
             })}
           />
           <input
+            aria-label="Customer contact"
             placeholder="Phone / WeChat / email"
             value={draft.customerContact}
             onChange={(event) => onUpdateDetails({
@@ -126,6 +144,15 @@ export function OrderPanel({
           </span>
         </div>
       </div>
+      {submitError && <div className="alert order-error">{submitError}</div>}
+      <button
+        className="primary checkout-button"
+        disabled={!ready || submitting}
+        onClick={onSubmit}
+      >
+        {submitting ? 'Saving order…' :
+          online ? 'Create payment link' : 'Reconnect to create payment link'}
+      </button>
       <p className="save-note">Draft saves automatically on this device.</p>
     </aside>
   )

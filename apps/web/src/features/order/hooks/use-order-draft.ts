@@ -61,5 +61,17 @@ export function useOrderDraft() {
     setDraft((current) => ({ ...current, items: [] }))
   }
 
-  return { draft, addItem, updateItem, updateDetails, removeItem, clearItems }
+  function resetDraft() {
+    setDraft({ ...emptyDraft, items: [] })
+  }
+
+  return {
+    draft,
+    addItem,
+    updateItem,
+    updateDetails,
+    removeItem,
+    clearItems,
+    resetDraft,
+  }
 }

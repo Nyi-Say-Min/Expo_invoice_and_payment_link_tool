@@ -32,7 +32,7 @@ export function CatalogPanel({
     <section className="catalog-panel">
       <div className="section-heading">
         <div><span>01</span><h2>Choose products</h2></div>
-        <strong>{products.length} items</strong>
+        <strong>{products.length} {products.length === 1 ? 'item' : 'items'}</strong>
       </div>
       <input
         className="search"
@@ -43,15 +43,27 @@ export function CatalogPanel({
         autoFocus
       />
       <div className="filters">
-        <select value={line} onChange={(event) => onLine(event.target.value)}>
+        <select
+          aria-label="Product line"
+          value={line}
+          onChange={(event) => onLine(event.target.value)}
+        >
           <option value="">All lines</option>
           {filters.lines.map((value) => <option key={value}>{value}</option>)}
         </select>
-        <select value={type} onChange={(event) => onType(event.target.value)}>
+        <select
+          aria-label="Product type"
+          value={type}
+          onChange={(event) => onType(event.target.value)}
+        >
           <option value="">All types</option>
           {filters.types.map((value) => <option key={value}>{value}</option>)}
         </select>
-        <select value={length} onChange={(event) => onLength(event.target.value)}>
+        <select
+          aria-label="Product length"
+          value={length}
+          onChange={(event) => onLength(event.target.value)}
+        >
           <option value="">All lengths</option>
           {filters.lengths.map((value) =>
             <option key={value} value={value}>{value}″</option>)}

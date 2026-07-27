@@ -1,7 +1,8 @@
 import cors from 'cors'
 import express from 'express'
-import { config } from './config.js'
+import { config, validateConfig } from './config.js'
 import { systemController } from './controllers/system-controller.js'
+import { assertDatabaseReady } from './db/client.js'
 import { requirePasscode } from './middleware/passcode.js'
 import { ordersRouter } from './routes/orders.js'
 import { productsRouter } from './routes/products.js'
@@ -26,6 +27,18 @@ app.use('/api/orders', ordersRouter)
 app.use(systemController.notFound)
 app.use(systemController.error)
 
-app.listen(config.port, () => {
-  console.log(`TRUNOV API listening on port ${config.port} (${config.appMode} mode)`)
+async function start() {
+  validateConfig()
+  await assertDatabaseReady()
+  app.listen(config.port, () => {
+    console.log(
+      `TRUNOV API listening on port ${config.port} (${config.appMode} mode)`,
+    )
+  })
+}
+
+void start().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : 'Database unavailable'
+  console.error(`API startup failed: ${message}`)
+  process.exitCode = 1
 })

@@ -5,6 +5,8 @@ import { CatalogPanel } from '../features/catalog/components/catalog-panel'
 import { OrderPanel } from '../features/order/components/order-panel'
 import { useOrderDraft } from '../features/order/hooks/use-order-draft'
 import { usePricingPreview } from '../features/order/hooks/use-pricing-preview'
+import { PaymentDialog } from '../features/payment/components/payment-dialog'
+import { usePaymentLink } from '../features/payment/hooks/use-payment-link'
 import type { Filters, Product } from '../types/commerce'
 import './app.css'
 
@@ -24,6 +26,7 @@ export default function App() {
   const [error, setError] = useState('')
   const [online, setOnline] = useState(navigator.onLine)
   const draftState = useOrderDraft()
+  const payment = usePaymentLink()
   const { pricing, pricingError } = usePricingPreview(
     draftState.draft,
     Boolean(passcode && online),
@@ -117,8 +120,26 @@ export default function App() {
           onUpdateDetails={draftState.updateDetails}
           onRemoveItem={draftState.removeItem}
           onClear={draftState.clearItems}
+          onSubmit={() => void payment.submit(draftState.draft)}
+          submitting={payment.loading}
+          submitError={payment.savedOrder ? '' : payment.error}
+          online={online}
         />
       </main>
+      {payment.savedOrder && (
+        <PaymentDialog
+          order={payment.savedOrder}
+          result={payment.result}
+          loading={payment.loading}
+          error={payment.error}
+          onRetry={() => void payment.submit(draftState.draft)}
+          onRefresh={() => void payment.refresh()}
+          onNext={() => {
+            payment.reset()
+            draftState.resetDraft()
+          }}
+        />
+      )}
     </div>
   )
 }

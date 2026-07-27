@@ -39,6 +39,30 @@ export type Draft = {
   expoDiscountEnabled: boolean
 }
 
+export type Order = {
+  id: string
+  customerName: string
+  customerContact: string
+  status: 'pending' | 'paid'
+  items: CartItem[]
+  expoDiscountEnabled: boolean
+  subtotalUsd: number
+  subtotalCny: number
+  discountKind: Pricing['discountKind']
+  discountUsd: number
+  totalUsd: number
+  totalCny: number
+  totalWeightG: number
+  stripePaymentUrl: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type PaymentLinkResult = {
+  order: Order
+  qrCodeDataUrl: string
+}
+
 export type ApiEnvelope<T> = {
   data: T
   filters?: Filters

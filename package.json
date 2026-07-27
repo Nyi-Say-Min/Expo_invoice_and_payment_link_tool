@@ -6,6 +6,8 @@
     "api:dev": "npm --prefix apps/api run dev",
     "api:build": "npm --prefix apps/api run build",
     "api:test": "npm --prefix apps/api run test",
+    "db:migrate": "npm --prefix apps/api run db:migrate",
+    "db:generate": "npm --prefix apps/api run db:generate",
     "web:build": "npm --prefix apps/web run build",
     "web:lint": "npm --prefix apps/web run lint",
     "test": "npm run api:test",
