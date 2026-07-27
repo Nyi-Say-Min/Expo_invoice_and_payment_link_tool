@@ -4,23 +4,23 @@ import type { Draft, Pricing } from '../../../types/commerce'
 
 export function usePricingPreview(draft: Draft, enabled: boolean) {
   const [pricing, setPricing] = useState<Pricing | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (!draft.items.length) {
         setPricing(null)
-        setError('')
+        setError(false)
         return
       }
       if (!enabled) return
       void getPricing(draft.items, draft.expoDiscountEnabled)
         .then((result) => {
           setPricing(result)
-          setError('')
+          setError(false)
         })
-        .catch((cause: unknown) => {
-          setError(cause instanceof Error ? cause.message : 'Pricing unavailable')
+        .catch(() => {
+          setError(true)
         })
     }, 180)
     return () => window.clearTimeout(timer)

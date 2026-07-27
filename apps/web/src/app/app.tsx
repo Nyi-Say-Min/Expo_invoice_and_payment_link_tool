@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
 import { getCatalog } from '../api/catalog-api'
 import { PasscodeGate } from '../features/auth/components/passcode-gate'
 import { CatalogPanel } from '../features/catalog/components/catalog-panel'
@@ -23,7 +24,6 @@ export default function App() {
   const [type, setType] = useState('')
   const [length, setLength] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [online, setOnline] = useState(navigator.onLine)
   const draftState = useOrderDraft()
   const payment = usePaymentLink()
@@ -34,17 +34,18 @@ export default function App() {
 
   const connect = useCallback(async (code: string) => {
     setLoading(true)
-    setError('')
     sessionStorage.setItem('trunov-passcode', code)
     try {
       const result = await getCatalog()
       setProducts(result.products)
       setFilters(result.filters)
       setPasscode(code)
-    } catch (cause) {
+    } catch {
       sessionStorage.removeItem('trunov-passcode')
       setPasscode('')
-      setError(cause instanceof Error ? cause.message : 'Unable to connect')
+      toast.error('Unable to open the workspace. Check the passcode and connection.', {
+        toastId: 'workspace-access-error',
+      })
     } finally {
       setLoading(false)
     }
@@ -66,6 +67,26 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!pricingError) return
+    toast.error('Unable to update pricing. Check your connection and try again.', {
+      toastId: 'pricing-error',
+    })
+  }, [pricingError])
+
+  useEffect(() => {
+    if (payment.error === 'payment') {
+      toast.error('Unable to complete this order. Check your connection and try again.', {
+        toastId: 'payment-error',
+      })
+    }
+    if (payment.error === 'status') {
+      toast.error('Unable to refresh the payment status. Please try again.', {
+        toastId: 'payment-status-error',
+      })
+    }
+  }, [payment.error])
+
   const visibleProducts = useMemo(() => {
     const needle = search.trim().toLowerCase()
     return products.filter((product) => {
@@ -83,13 +104,11 @@ export default function App() {
     <PasscodeGate
       value={passcodeInput}
       loading={loading}
-      error={error}
       onChange={setPasscodeInput}
       onSubmit={() => void connect(passcodeInput)}
     />
   )
 
-  const notice = error || pricingError
   return (
     <div className="app-shell">
       <header>
@@ -104,9 +123,6 @@ export default function App() {
           }}>Lock</button>
         </div>
       </header>
-      {notice && <button className="alert dismiss" onClick={() => setError('')}>
-        {notice} <span>×</span>
-      </button>}
       <main className="workspace">
         <CatalogPanel
           products={visibleProducts} filters={filters}
@@ -122,7 +138,6 @@ export default function App() {
           onClear={draftState.clearItems}
           onSubmit={() => void payment.submit(draftState.draft)}
           submitting={payment.loading}
-          submitError={payment.savedOrder ? '' : payment.error}
           online={online}
         />
       </main>
@@ -131,7 +146,6 @@ export default function App() {
           order={payment.savedOrder}
           result={payment.result}
           loading={payment.loading}
-          error={payment.error}
           onRetry={() => void payment.submit(draftState.draft)}
           onRefresh={() => void payment.refresh()}
           onNext={() => {

@@ -1,7 +1,6 @@
 type Props = {
   value: string
   loading: boolean
-  error: string
   onChange: (value: string) => void
   onSubmit: () => void
 }
@@ -9,7 +8,6 @@ type Props = {
 export function PasscodeGate({
   value,
   loading,
-  error,
   onChange,
   onSubmit,
 }: Props) {
@@ -32,7 +30,6 @@ export function PasscodeGate({
             autoFocus
             required
           />
-          {error && <div className="alert">{error}</div>}
           <button className="primary" disabled={loading}>
             {loading ? 'Opening workspace…' : 'Open workspace'}
           </button>

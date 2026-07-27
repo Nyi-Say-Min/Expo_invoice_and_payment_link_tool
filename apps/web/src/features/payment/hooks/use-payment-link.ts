@@ -10,23 +10,21 @@ import type {
   PaymentLinkResult,
 } from '../../../types/commerce'
 
-function message(cause: unknown) {
-  return cause instanceof Error ? cause.message : 'Payment link unavailable'
-}
+type PaymentError = '' | 'validation' | 'payment' | 'status'
 
 export function usePaymentLink() {
   const [savedOrder, setSavedOrder] = useState<Order | null>(null)
   const [result, setResult] = useState<PaymentLinkResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<PaymentError>('')
   const inFlight = useRef(false)
 
   async function submit(draft: Draft) {
     if (inFlight.current) return
-    if (!draft.items.length) return setError('Add at least one product')
-    if (!draft.customerName.trim()) return setError('Customer name is required')
+    if (!draft.items.length) return setError('validation')
+    if (!draft.customerName.trim()) return setError('validation')
     if (!draft.customerContact.trim()) {
-      return setError('Customer contact is required')
+      return setError('validation')
     }
 
     inFlight.current = true
@@ -38,8 +36,8 @@ export function usePaymentLink() {
       const payment = await createPaymentLink(order.id)
       setSavedOrder(payment.order)
       setResult(payment)
-    } catch (cause) {
-      setError(message(cause))
+    } catch {
+      setError('payment')
     } finally {
       inFlight.current = false
       setLoading(false)
@@ -56,8 +54,8 @@ export function usePaymentLink() {
       const refreshed = await refreshOrderStatus(order.id)
       setSavedOrder(refreshed)
       setResult((current) => current && { ...current, order: refreshed })
-    } catch (cause) {
-      setError(message(cause))
+    } catch {
+      setError('status')
     } finally {
       inFlight.current = false
       setLoading(false)

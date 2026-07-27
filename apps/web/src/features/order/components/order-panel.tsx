@@ -11,7 +11,6 @@ type Props = {
   onClear: () => void
   onSubmit: () => void
   submitting: boolean
-  submitError: string
   online: boolean
 }
 
@@ -25,7 +24,6 @@ export function OrderPanel({
   onClear,
   onSubmit,
   submitting,
-  submitError,
   online,
 }: Props) {
   const ready = Boolean(
@@ -35,6 +33,12 @@ export function OrderPanel({
     draft.customerContact.trim() &&
     online,
   )
+  const missingDetails: string[] = []
+  if (!draft.customerName.trim()) missingDetails.push('customer name')
+  if (!draft.customerContact.trim()) missingDetails.push('customer contact')
+  const detailsError = draft.items.length && missingDetails.length
+    ? `Required: ${missingDetails.join(' and ')}.`
+    : ''
 
   return (
     <aside className="order-panel">
@@ -84,26 +88,49 @@ export function OrderPanel({
         </div>
       )}
 
+      <form
+        className="order-form"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (ready && !submitting) onSubmit()
+        }}
+      >
       <div className="customer">
         <h3>Customer</h3>
         <div className="field-row">
-          <input
-            aria-label="Customer name"
-            placeholder="Name"
-            value={draft.customerName}
-            onChange={(event) => onUpdateDetails({
-              customerName: event.target.value,
-            })}
-          />
-          <input
-            aria-label="Customer contact"
-            placeholder="Phone / WeChat / email"
-            value={draft.customerContact}
-            onChange={(event) => onUpdateDetails({
-              customerContact: event.target.value,
-            })}
-          />
+          <label className="field" htmlFor="customer-name">
+            <span>Name <b aria-hidden="true">*</b></span>
+            <input
+              id="customer-name"
+              placeholder="Customer name"
+              value={draft.customerName}
+              required
+              aria-invalid={!draft.customerName.trim()}
+              onChange={(event) => onUpdateDetails({
+                customerName: event.target.value,
+              })}
+            />
+          </label>
+          <label className="field" htmlFor="customer-contact">
+            <span>Contact <b aria-hidden="true">*</b></span>
+            <input
+              id="customer-contact"
+              placeholder="Phone / WeChat / email"
+              value={draft.customerContact}
+              required
+              aria-invalid={!draft.customerContact.trim()}
+              onChange={(event) => onUpdateDetails({
+                customerContact: event.target.value,
+              })}
+            />
+          </label>
         </div>
+        {detailsError && (
+          <div id="checkout-requirements" className="alert order-error" role="alert">
+            {detailsError}
+          </div>
+        )}
         <label className="switch-row">
           <span>
             <strong>Expo discount</strong>
@@ -144,16 +171,17 @@ export function OrderPanel({
           </span>
         </div>
       </div>
-      {submitError && <div className="alert order-error">{submitError}</div>}
       <button
+        type="submit"
         className="primary checkout-button"
         disabled={!ready || submitting}
-        onClick={onSubmit}
+        aria-describedby={detailsError ? 'checkout-requirements' : undefined}
       >
         {submitting ? 'Saving order…' :
           online ? 'Create payment link' : 'Reconnect to create payment link'}
       </button>
       <p className="save-note">Draft saves automatically on this device.</p>
+      </form>
     </aside>
   )
 }

@@ -8,7 +8,6 @@ type Props = {
   order: Order
   result: PaymentLinkResult | null
   loading: boolean
-  error: string
   onRetry: () => void
   onRefresh: () => void
   onNext: () => void
@@ -18,7 +17,6 @@ export function PaymentDialog({
   order,
   result,
   loading,
-  error,
   onRetry,
   onRefresh,
   onNext,
@@ -43,7 +41,6 @@ export function PaymentDialog({
               Order <strong>#{order.id.slice(0, 8)}</strong> is safely stored.
               Retrying will reuse this order and cannot create a duplicate link.
             </p>
-            {error && <div className="alert">{error}</div>}
             <button className="primary" disabled={loading} onClick={onRetry}>
               {loading ? 'Creating payment link…' : 'Retry payment link'}
             </button>
@@ -75,7 +72,6 @@ export function PaymentDialog({
                 </a>
               </div>
             </div>
-            {error && <div className="alert">{error}</div>}
             <div className="dialog-actions">
               <button className="quiet bordered" disabled={loading} onClick={onRefresh}>
                 {loading ? 'Checking…' : 'Refresh status'}
