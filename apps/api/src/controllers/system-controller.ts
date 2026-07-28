@@ -19,7 +19,6 @@ type StripeFailure = Error & {
 }
 
 function isStripeConnectionError(error: unknown): error is StripeFailure {
-  console.log(error)
   return error instanceof Error &&
     'type' in error &&
     error.type === 'StripeConnectionError'

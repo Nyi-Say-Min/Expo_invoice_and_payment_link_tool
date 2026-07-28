@@ -12,6 +12,7 @@ type Props = {
   onReload: () => void
   onRefresh: (orderId: string) => void
   onResume: (orderId: string) => void
+  onPrint: (order: Order) => void
   onExport: () => void
   onPageChange: (page: number) => void
 }
@@ -34,6 +35,7 @@ export function OrdersPanel({
   onReload,
   onRefresh,
   onResume,
+  onPrint,
   onExport,
   onPageChange,
 }: Props) {
@@ -110,7 +112,14 @@ export function OrdersPanel({
                     <span className={`status ${order.status}`}>{order.status}</span>
                   </td>
                   <td>
-                    {order.status === 'pending' && (
+                    {order.status === 'paid' ? (
+                      <button
+                        className="resume-button print-button"
+                        onClick={() => onPrint(order)}
+                      >
+                        Print / Save PDF
+                      </button>
+                    ) : (
                       <div className="order-row-actions">
                         <button
                           className="resume-button"

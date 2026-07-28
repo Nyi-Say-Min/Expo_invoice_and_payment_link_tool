@@ -8,9 +8,10 @@ import { useOrderDraft } from '../features/order/hooks/use-order-draft'
 import { usePricingPreview } from '../features/order/hooks/use-pricing-preview'
 import { OrdersPanel } from '../features/orders/components/orders-panel'
 import { useOrders } from '../features/orders/hooks/use-orders'
+import { InvoiceDocument } from '../features/payment/components/invoice-document'
 import { PaymentDialog } from '../features/payment/components/payment-dialog'
 import { usePaymentLink } from '../features/payment/hooks/use-payment-link'
-import type { Filters, Product } from '../types/commerce'
+import type { Filters, Order, Product } from '../types/commerce'
 import './app.css'
 
 const emptyFilters: Filters = { lines: [], types: [], lengths: [] }
@@ -29,6 +30,7 @@ export default function App() {
   const [view, setView] = useState<View>('new-order')
   const [loading, setLoading] = useState(false)
   const [online, setOnline] = useState(navigator.onLine)
+  const [printOrder, setPrintOrder] = useState<Order | null>(null)
   const draftState = useOrderDraft()
   const payment = usePaymentLink()
   const orderHistory = useOrders(Boolean(passcode && view === 'orders'))
@@ -78,6 +80,17 @@ export default function App() {
       toastId: 'pricing-error',
     })
   }, [pricingError])
+
+  useEffect(() => {
+    if (!printOrder) return
+    const frame = window.requestAnimationFrame(() => window.print())
+    const finish = () => setPrintOrder(null)
+    window.addEventListener('afterprint', finish, { once: true })
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('afterprint', finish)
+    }
+  }, [printOrder])
 
   useEffect(() => {
     if (payment.error === 'payment') {
@@ -191,6 +204,7 @@ export default function App() {
           onReload={() => void orderHistory.load()}
           onRefresh={(orderId) => void orderHistory.refresh(orderId)}
           onResume={(orderId) => void payment.resume(orderId)}
+          onPrint={setPrintOrder}
           onExport={() => void orderHistory.exportCsv()}
           onPageChange={orderHistory.goToPage}
         />
@@ -213,6 +227,11 @@ export default function App() {
           }}
           nextLabel={payment.source === 'history' ? 'Close' : 'Start next order'}
         />
+      )}
+      {printOrder && (
+        <div className="invoice-print-host">
+          <InvoiceDocument order={printOrder} />
+        </div>
       )}
     </div>
   )

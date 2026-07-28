@@ -3,6 +3,7 @@ import type {
   PaymentLinkResult,
 } from '../../../types/commerce'
 import { money } from '../../../utils/format'
+import { InvoiceDocument } from './invoice-document'
 
 type Props = {
   order: Order
@@ -75,6 +76,9 @@ export function PaymentDialog({
               </div>
             </div>
             <div className="dialog-actions">
+              <button className="quiet bordered" onClick={() => window.print()}>
+                Print / save PDF
+              </button>
               <button className="quiet bordered" disabled={loading} onClick={onRefresh}>
                 {loading ? 'Checking…' : 'Refresh status'}
               </button>
@@ -83,6 +87,7 @@ export function PaymentDialog({
           </>
         )}
       </section>
+      {result && <InvoiceDocument order={linkedOrder} />}
     </div>
   )
 }

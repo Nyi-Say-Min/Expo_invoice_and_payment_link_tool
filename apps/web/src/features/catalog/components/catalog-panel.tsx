@@ -40,7 +40,7 @@ export function CatalogPanel({
         placeholder="Search SKU, hair type, product…"
         value={search}
         onChange={(event) => onSearch(event.target.value)}
-        autoFocus
+        autoFocus={window.matchMedia('(min-width: 821px)').matches}
       />
       <div className="filters">
         <select
