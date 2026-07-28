@@ -24,6 +24,9 @@ npm run web:lint
 npm run web:build
 ```
 
+The API must be running before starting the development server so authentication,
+catalog, pricing, and order requests can complete.
+
 ## Configuration
 
 The web app reads:

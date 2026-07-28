@@ -31,11 +31,11 @@ root `.env`.
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | Local PostgreSQL URL | Required by migration tooling. |
-| `STRIPE_SECRET_KEY` | Empty | Required when creating or checking payments. |
+| `DATABASE_URL` | Local PostgreSQL URL | Set explicitly for every deployment. |
+| `STRIPE_SECRET_KEY` | Empty | Test key required when creating or checking payments. |
 | `STRIPE_WEBHOOK_SECRET` | Empty | Required for Stripe webhook verification. |
-| `PASSCODE` | Empty | Required when `NODE_ENV=production`. |
-| `APP_MODE` | `test` | Accepts `test` or `live`. |
+| `PASSCODE` | Empty | Required in every environment. |
+| `APP_MODE` | `test` | Must remain `test`; every other value is rejected. |
 | `CORS_ORIGIN` | `http://localhost:5173` | Comma-separated exact origins. |
 | `PORT` | `3001` | HTTP listen port. |
 | `NODE_ENV` | `development` | Controls production safeguards and DB pool size. |
@@ -44,7 +44,7 @@ root `.env`.
 ## Routes
 
 `GET /health` is public. The Stripe webhook is public but signature protected.
-All other `/api` routes require `x-passcode` when a passcode is configured.
+All other `/api` routes always require the configured `x-passcode`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ The server is authoritative:
 - An order is persisted before its Payment Link is requested.
 - Existing stored links are returned instead of recreated.
 - Stripe receives a stable idempotency key based on the order ID.
-- The Stripe key must match `APP_MODE`.
+- The application accepts test-mode Stripe keys only and rejects live mode.
 - Webhook payloads are processed as raw bytes and verified with the configured
   signing secret.
 - Paid states can be recovered by querying Checkout Sessions if a webhook is
@@ -118,4 +118,3 @@ npm test
 
 The suite covers catalog validation, pricing boundaries and discounts, order
 service behavior, and API response mapping.
-

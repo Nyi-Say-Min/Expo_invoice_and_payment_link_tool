@@ -26,8 +26,10 @@ export class WebhookController {
       if (checkout) await this.orders.markPaid(checkout)
       response.json({ received: true })
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.error(`Stripe webhook rejected: ${message}`)
       response.status(400).json({
-        error: error instanceof Error ? error.message : 'Invalid webhook',
+        error: 'Invalid Stripe webhook',
       })
     }
   }

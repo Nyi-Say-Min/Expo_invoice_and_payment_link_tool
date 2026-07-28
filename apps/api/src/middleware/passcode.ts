@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import type { NextFunction, Request, Response } from 'express'
-import { config, requireConfig } from '../config.js'
+import { requireConfig } from '../config.js'
 
 function matches(provided: string, expected: string) {
   const providedBytes = Buffer.from(provided)
@@ -14,7 +14,6 @@ export function requirePasscode(
   response: Response,
   next: NextFunction,
 ) {
-  if (!config.passcode && config.nodeEnv !== 'production') return next()
   const expected = requireConfig('passcode')
   if (!matches(request.header('x-passcode') ?? '', expected)) {
     response.status(401).json({ error: 'Invalid passcode' })

@@ -10,9 +10,10 @@ loadEnv({
   quiet: true,
 })
 
-export type AppMode = 'test' | 'live'
+export type AppMode = 'test'
 
-const appMode: AppMode = process.env.APP_MODE === 'live' ? 'live' : 'test'
+const requestedAppMode = (process.env.APP_MODE?.trim() || 'test').toLowerCase()
+const appMode: AppMode = 'test'
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim() ?? ''
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? ''
 const nodeEnv = process.env.NODE_ENV ?? 'development'
@@ -22,9 +23,7 @@ function isPlaceholder(value: string) {
 }
 
 function validateStripeSecretKey(value: string) {
-  const expectedPrefixes = appMode === 'live'
-    ? ['sk_live_', 'rk_live_']
-    : ['sk_test_', 'rk_test_']
+  const expectedPrefixes = ['sk_test_', 'rk_test_']
   if (isPlaceholder(value)) {
     throw new Error('STRIPE_SECRET_KEY is still a placeholder')
   }
@@ -50,6 +49,9 @@ export const config = {
 }
 
 export function validateConfig() {
+  if (requestedAppMode !== 'test') {
+    throw new Error('APP_MODE must be test for this test-mode-only application')
+  }
   if (stripeSecretKey) validateStripeSecretKey(stripeSecretKey)
   if (
     stripeWebhookSecret &&
@@ -58,8 +60,8 @@ export function validateConfig() {
   ) {
     throw new Error('STRIPE_WEBHOOK_SECRET is invalid or still a placeholder')
   }
-  if (nodeEnv === 'production' && !config.passcode) {
-    throw new Error('PASSCODE is required in production')
+  if (!config.passcode || isPlaceholder(config.passcode)) {
+    throw new Error('PASSCODE is required and cannot be a placeholder')
   }
 }
 

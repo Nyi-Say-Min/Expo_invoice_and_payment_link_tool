@@ -4,8 +4,10 @@ An internal booth application for building hair-extension orders, applying the
 correct pricing rules, creating Stripe Payment Links, and tracking payments.
 It is designed for fast use on laptops and tablets at the China Hair Expo.
 
-Deployment is intentionally not documented as complete yet. The repository is
-ready for the next deployment step, but no deployed URL is claimed here.
+**Live application:** [expo-invoice-and-payment-link-tool.vercel.app](https://expo-invoice-and-payment-link-tool.vercel.app/)
+
+The deployed application and every Stripe integration in this submission are
+strictly test mode.
 
 ## What is included
 
@@ -45,6 +47,15 @@ ready for the next deployment step, but no deployed URL is claimed here.
 See [apps/api/README.md](apps/api/README.md) and
 [apps/web/README.md](apps/web/README.md) for app-specific details.
 
+### Data flow
+
+The React/Vite client calls the Express API with the booth passcode in the
+`x-passcode` header. The API recalculates prices from its server-side catalog,
+persists orders in PostgreSQL, and creates test-mode Stripe Payment Links.
+Stripe sends signed webhook events back to the API, which updates PostgreSQL;
+the client-side **Check status** action queries Stripe through the API as a
+recovery path when webhook delivery is delayed.
+
 ## Prerequisites
 
 - Node.js 22 recommended
@@ -62,7 +73,8 @@ See [apps/api/README.md](apps/api/README.md) and
    npm install --prefix apps/web
    ```
 
-2. Copy `.env.example` to `.env` and replace its placeholder values.
+2. Copy `.env.example` to the repository-root `.env` and replace its API
+   placeholder values.
 
    Windows PowerShell:
 
@@ -74,6 +86,14 @@ See [apps/api/README.md](apps/api/README.md) and
 
    ```bash
    cp .env.example .env
+   ```
+
+   The API loads this root file. Vite does not: its local default already points
+   to `http://localhost:3001`. If a different API URL is needed locally, create
+   `apps/web/.env` containing only:
+
+   ```text
+   VITE_API_URL=http://localhost:3001
    ```
 
 3. Start PostgreSQL and apply the committed migration:
@@ -105,12 +125,12 @@ The API runs at `http://localhost:3001` by default. Its health endpoint is
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | PostgreSQL connection string. |
-| `STRIPE_SECRET_KEY` | For payments | Test or restricted live key matching `APP_MODE`. |
+| `DATABASE_URL` | Deployment | PostgreSQL connection string; a local default is provided. |
+| `STRIPE_SECRET_KEY` | For payments | Stripe test or restricted test key (`sk_test_` or `rk_test_`). |
 | `STRIPE_WEBHOOK_SECRET` | For webhooks | Stripe signing secret beginning with `whsec_`. |
-| `PASSCODE` | Production | Shared booth passcode; never hardcode it in the web app. |
-| `APP_MODE` | Yes | `test` by default; set to `live` only for the approved production account. |
-| `CORS_ORIGIN` | Yes | Allowed web origins, comma-separated when more than one is needed. |
+| `PASSCODE` | Yes | Shared booth passcode; never hardcode it in the web app. |
+| `APP_MODE` | Deployment | Must be `test`; any other value is rejected. |
+| `CORS_ORIGIN` | Deployment | Allowed web origins; defaults locally to `http://localhost:5173`. |
 | `PORT` | No | API port; defaults to `3001`. |
 | `NODE_ENV` | Deployment | Use `production` in production. |
 | `CATALOG_PATH` | No | Absolute or working-directory-relative path to a replacement catalog CSV. |
@@ -121,16 +141,18 @@ The API runs at `http://localhost:3001` by default. Its health endpoint is
 
 ### Stripe key safety
 
-The API validates Stripe keys before use:
+The API enforces the assignment's test-mode-only constraint before use:
 
 - `APP_MODE=test` accepts only `sk_test_` or `rk_test_` keys.
-- `APP_MODE=live` accepts only `sk_live_` or `rk_live_` keys.
+- Any non-test `APP_MODE` is rejected during startup.
+- Live Stripe secret keys are rejected.
 - Placeholder keys are rejected.
-- Production startup is rejected when `PASSCODE` is missing.
+- Startup is rejected when `PASSCODE` is missing.
 
 Never commit `.env`, Stripe keys, webhook secrets, or database credentials.
-For production, use the restricted Stripe key supplied through the hosting
-provider's secret manager.
+For deployment, use a restricted test key supplied through the hosting
+provider's secret manager. Only `VITE_API_URL` belongs in the Vite environment;
+all credentials and the booth passcode remain server-side.
 
 ## Local Stripe webhook
 
@@ -155,10 +177,9 @@ delivery is delayed.
 USD is the payment source of truth. All Stripe Payment Links charge the final
 order total in USD.
 
-CNY is informational and comes from the supplied CNY catalog prices; the app
-does not perform a live exchange-rate conversion. Blonde pricing and discounts
-are applied to USD and CNY independently, then CNY values are rounded to whole
-yuan for display.
+CNY is a separately calculated, catalog-based reference total rounded to whole
+yuan. It is not a converted Stripe charge or a live exchange-rate quote. Blonde
+pricing and discounts are applied to USD and CNY independently.
 
 Rules:
 
@@ -182,6 +203,9 @@ are previews only and cannot override stored prices.
 - The web client blocks repeated submissions in flight.
 - The API reuses an existing link and sends Stripe the stable idempotency key
   `trunov-order-{orderId}-payment-link-v1`.
+- A link is saved after Stripe responds. If the network times out after Stripe
+  accepts the request but before persistence, retrying uses that same Stripe
+  idempotency key instead of creating a duplicate link.
 - Orders survive page refreshes and API restarts in PostgreSQL.
 - Clear error responses distinguish database and Stripe connectivity failures.
 
@@ -214,8 +238,8 @@ The Orders screen exports all orders with date, order ID, customer, contact,
 items, subtotal, applied discount, USD total, and status.
 
 After a Payment Link is created, choose **Print / save PDF**. The browser print
-dialog renders a dedicated A4 invoice with placeholder company details. Those
-details should be replaced before production use. Paid invoices can be printed
+dialog renders a dedicated A4 invoice with placeholder company details, as
+allowed by the optional assignment bonus. Paid invoices can be printed
 again from **Orders → Actions → Print / Save PDF**.
 
 ## Responsive behavior
@@ -239,6 +263,15 @@ production build.
 
 Pricing tests cover blonde pricing, the 10 kg boundary, discount precedence,
 currency totals, catalog validation, and response mapping.
+
+Latest result on 2026-07-28: 7 test files and 21 tests passed; the API build,
+web lint, and web production build also passed.
+
+The final local audit on 2026-07-28 also checked the deployed application in
+Chrome at desktop, tablet portrait, tablet landscape, short DevTools, and mobile
+viewports. Product and order APIs loaded without console errors; the cart,
+quantity, and discount calculations were exercised without creating another
+Stripe order.
 
 ## Key trade-offs
 
@@ -297,26 +330,39 @@ Generated changes were not accepted on description alone. I:
   viewport;
 - checked Chrome console output for runtime errors.
 
-Pricing and payment behavior remain server-authoritative.
+Chrome DevTools was used for browser inspection and responsive measurements,
+not as a substitute for the automated test suite. Pricing and payment behavior
+remain server-authoritative.
 
 ## Scope boundaries
 
 As required, this project does not include inventory tracking, multi-user
 roles, a refunds UI, or analytics. Refunds remain a Stripe Dashboard task.
 
-## Production checklist for the next step
+## Submission deployment checklist
 
 - Provision PostgreSQL and run `npm run db:migrate`.
 - Configure all environment variables through hosting secrets.
-- Set exact production origins in `CORS_ORIGIN`.
+- Set the exact deployed origin in `CORS_ORIGIN`.
 - Set `NODE_ENV=production`.
-- Start in `APP_MODE=test` for deployment verification.
-- Configure the production Stripe webhook URL.
+- Keep `APP_MODE=test`; the API rejects every other mode.
+- Configure the deployed Stripe test webhook URL.
 - Validate enabled payment methods end to end.
-- Only then switch to `APP_MODE=live` with the approved restricted live key.
-- Replace invoice placeholder company details.
 - Test on the booth tablet over a phone hotspot.
-- Complete and reconcile one approved small live payment.
+- Complete a Stripe test-card payment and confirm the paid status.
+
+## Required screen recording
+
+The assignment requires a separate recording of up to five minutes. Attach its
+shareable link with the submission message rather than committing a large video
+file or a temporary private URL to this repository. The recording should show:
+
+1. unlocking the deployed application;
+2. adding three items, including a blonde item;
+3. an expo or at-least-10 kg volume discount and non-stacking behavior;
+4. creating the test Payment Link and QR code;
+5. paying with a Stripe test card; and
+6. the order changing to **Paid** through the webhook or **Check status**.
 
 ## Vercel + Railway deployment
 
@@ -379,7 +425,7 @@ The web app's `vercel.json` keeps Vite SPA routes on `index.html`.
 5. Deploy, copy the final Vercel production URL, set that exact URL as the
    Railway API's `CORS_ORIGIN`, and redeploy the API.
 
-### Production Stripe webhook
+### Deployed test-mode Stripe webhook
 
 In Stripe Workbench, register:
 
@@ -396,4 +442,4 @@ checkout.session.async_payment_succeeded
 
 Copy that endpoint's `whsec_...` signing secret into the Railway API variable
 `STRIPE_WEBHOOK_SECRET`, then redeploy the API. Test the complete flow in Stripe
-test mode before considering live mode.
+test mode with a Stripe test card such as `4242 4242 4242 4242`.
